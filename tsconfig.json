@@ -5,6 +5,6 @@
     "target": "ES5",
     "strict": true,
     "outDir": "build",
-    "esModuleInterop": true
+    "esModuleInterop": true,
   }
 }
