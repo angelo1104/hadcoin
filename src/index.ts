@@ -115,7 +115,7 @@ class Blockchain {
   public chain: Block[];
   private readonly difficulty: number;
   private transactions: TransactionInterface[];
-  public readonly nodes: Set<any>;
+  public nodes: Set<any>;
 
   constructor(difficulty: number) {
     this.chain = [];
@@ -195,28 +195,37 @@ class Blockchain {
     this.nodes.add(node.origin);
   }
 
-  replaceChain(): boolean {
+  async replaceChain(): Promise<boolean> {
     let longestChain: null | BlockInterface[] = null;
     let maxLength: number = this.chain.length;
 
     // loop through all nodes
-    this.nodes.forEach(async (node) => {
+    for (const node of Array.from(this.nodes)) {
       try {
         const {
           data: { chain, length, valid },
         } = await axios.get(`${node}/chain`);
         if (length > maxLength && valid == true) {
+          console.log(true);
           // replace chain to the longest chain in network
           longestChain = chain;
           // change length to the new length
           maxLength = parseInt(length);
         }
       } catch (e) {}
-    });
+    }
 
     // if chain is longer than the current chain replace the current chain.
     if (longestChain) {
-      this.chain = longestChain;
+      this.chain = longestChain.map(
+        (block, index) =>
+          new Block(
+            block.data,
+            index.toString(),
+            block.previousHash,
+            this.difficulty
+          )
+      );
       return true;
     } else return false;
   }
@@ -314,11 +323,12 @@ app.post("/connect-nodes", (req, res) => {
 
       res.status(200).json({
         message: "You are so hot. I am not a gay so if you are a guy fuck up.",
-        nodes: blockChain.nodes,
+        nodes: Array.from(blockChain.nodes),
       });
     } catch (e) {
       res.status(500).json({
         message: "I fuck up! FUCKKKK!!!!",
+        error: e,
       });
     }
   }
